@@ -6,8 +6,8 @@ Just a 2D space shooter from a neighboring parallel world. It was written using 
 
 - Clone the repository: `git clone [https://github.com/Dave-YP/cosmic-heat-pygame.git](https://github.com/Dave-YP/cosmic-heat-pygame.git)`
 - Change directory: `cd cosmic-heat-pygame`
-- Create a virtual environment: `python -m venv env`
-- Activate the virtual environment: `source env/Scripts/activate`
+- Create a virtual environment: `python -m venv virt_env`
+- Activate the virtual environment: `source env/bin/activate`
 - Install requirements: `pip install -r requirements.txt`
 - Run the game: `python main.py`
 
