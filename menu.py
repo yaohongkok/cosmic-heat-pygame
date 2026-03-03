@@ -203,24 +203,4 @@ class MainMenu:
             self.clock.tick(60)
 
 
-# Module-level state
-show_menu = True
-_menu_has_run = False
 
-
-def main() -> None:
-    """
-    Entry point called by main.py.
-
-    The menu runs automatically when this module is imported.
-    This function exists for compatibility with main.py's call to menu.main().
-    It's a no-op since the menu has already run.
-    """
-    pass
-
-
-# Run menu when module is imported (matches original behavior)
-# This executes once when main.py does "import menu"
-_menu = MainMenu()
-_menu.run()
-_menu_has_run = True

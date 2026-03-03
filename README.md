@@ -2,14 +2,20 @@
 
 Just a 2D space shooter from a neighboring parallel world. It was written using Python and Pygame. To control the player, you can use either the keyboard or a joystick. The game features a variety of cool bosses and enemies that will challenge your skills and keep you engaged. Get ready to blast your way through waves of enemy ships and take on epic boss battles in this exciting space adventure!
 
-## Game launch
+You can now view change log in `CHANGELOG.md`.
+
+## One-time Setup
 
 - Clone the repository: `git clone [https://github.com/Dave-YP/cosmic-heat-pygame.git](https://github.com/Dave-YP/cosmic-heat-pygame.git)`
 - Change directory: `cd cosmic-heat-pygame`
 - Create a virtual environment: `python -m venv virt_env`
-- Activate the virtual environment: `source env/bin/activate`
+- Activate the virtual environment: `source virt_env/bin/activate`
 - Install requirements: `pip install -r requirements.txt`
+
+
+## Game launch
 - Run the game: `python main.py`
+
 
 ## Controls
 

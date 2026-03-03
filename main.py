@@ -6,7 +6,7 @@ import random
 from controls import move_player, move_player_with_joystick
 from classes.constants import WIDTH, HEIGHT, FPS, SHOOT_DELAY
 from functions import show_game_over, music_background
-from menu import show_menu
+from menu import MainMenu
 
 from classes.player import Player
 from classes.bullets import Bullet
@@ -122,9 +122,10 @@ if pygame.joystick.get_count() > 0:
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
 
+show_menu = True
 if show_menu:
-    import menu
-    menu.main()
+    menu = MainMenu()
+    menu.run()
 
 is_shooting = False
 last_shot_time = 0
