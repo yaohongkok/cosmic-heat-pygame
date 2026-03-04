@@ -5,6 +5,9 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 
 def music_background():
+    if not pygame.mixer.get_init():
+        pygame.mixer.init()
+
     pygame.mixer.music.load('game_sounds/background_music.mp3')
     pygame.mixer.music.set_volume(0.25)
     pygame.mixer.music.play(loops=-1)

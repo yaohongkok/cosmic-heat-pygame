@@ -35,3 +35,14 @@ You can now view change log in `CHANGELOG.md`.
 ![alt text](images/g1.png "Gameplay")
 ![alt text](images/g2.png "Gameplay")
 ![alt text](images/g3.png "Gameplay")
+
+
+## Dev-Notes
+### Running Tests
+You can run tests to perform simple testing on the basic functionality of this game by using pytest:
+
+```
+pytest --forked
+```
+
+You have to run the tests with forked or some shared state will cause test failures.

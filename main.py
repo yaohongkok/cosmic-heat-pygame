@@ -29,9 +29,19 @@ class Game:
 
     def __init__(self, show_menu=True):
         pygame.init()
+
+        while not pygame.get_init():
+            sleep(0.1)
+
         music_background()
 
+        if not pygame.display.get_init():
+            pygame.display.init()
+
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
+        pygame.font.get_init() or pygame.font.init()
+
         self.surface = pygame.Surface((WIDTH, HEIGHT))
         pygame.display.set_caption("Cosmic Heat")
         self.clock = pygame.time.Clock()
@@ -144,6 +154,10 @@ class Game:
 
     def _init_joystick(self):
         self.joystick = None
+
+        if not pygame.joystick.get_init():
+            pygame.joystick.init()
+
         if pygame.joystick.get_count() > 0:
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()

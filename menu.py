@@ -59,6 +59,9 @@ class MainMenu:
         self.explosion_sound = pygame.mixer.Sound('game_sounds/explosions/explosion1.wav')
         self.explosion_sound.set_volume(self.MUSIC_VOLUME)
 
+        if not pygame.font.get_init():
+            pygame.font.init()
+
         self.font = pygame.font.SysFont('Comic Sans MS', 40)
 
         self._start_music()
