@@ -6,6 +6,13 @@ These tests mock pygame to avoid requiring a display.
 import sys
 import unittest
 from unittest.mock import MagicMock, patch
+import importlib
+
+# ensure fresh pygame/menu modules so mocks work consistently when
+# unittest discovery reimports tests
+for _mod in ('pygame', 'menu'):
+    if _mod in sys.modules:
+        del sys.modules[_mod]
 
 
 # Create comprehensive pygame mock before any imports
@@ -72,8 +79,10 @@ mock_pygame.display.set_mode.return_value = MockSurface()
 mock_pygame.font.SysFont.return_value = MagicMock()
 mock_pygame.joystick.get_count.return_value = 0
 
-# Set up path for imports
-sys.path.insert(0, '/tmp/inputs/cosmic-heat-pygame')
+# Set up project root on sys.path so imports still work when tests
+# are executed from the tests directory. This mirrors what discovery does.
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import menu module (safe now since no module-level execution)
 from menu import MenuButton, MainMenu
