@@ -1,20 +1,31 @@
-"""Integration test for main.py - verifies user can enter the game from menu.
+"""Integration tests for main.py - verifies user can enter the game from menu.
 
-Uses SDL dummy video/audio drivers to run without a physical display.
+These tests verify the complete flow from menu initialization to gameplay,
+using SDL dummy video/audio drivers to run without a physical display.
+
+Forked Test Compatibility:
+    Previous implementation used setUpClass() to initialize pygame once for
+    all tests, which failed with `pytest --forked` because:
+    - setUpClass() runs in the parent process before forking
+    - Each forked test process inherits an uninitialized pygame state
+    - Calls to pygame.event.clear() in tearDown() failed with
+      "video system not initialized"
+    
+    The fix initializes pygame in setUp() and cleans up in tearDown() for
+    each test, ensuring each forked process has a properly initialized
+    pygame environment.
 """
 
 import os
 import sys
-import threading
-import time
 import unittest
 
-# Ensure the project root is importable when running inside tests/ folder
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-# Configure SDL to use dummy drivers before importing pygame
+# Configure SDL to use dummy drivers BEFORE any pygame import.
+# This allows tests to run without a physical display or audio device.
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
 os.environ['SDL_AUDIODRIVER'] = 'dummy'
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import pygame
 
@@ -23,23 +34,34 @@ from menu import MainMenu
 
 
 class TestMenuToGameTransition(unittest.TestCase):
-    """Integration test: user can navigate from menu to game."""
+    """Integration tests for menu-to-game transition flow."""
 
     def setUp(self):
-        # Ensure pygame is in clean state
-        try:
-            pygame.quit()
-        except Exception:
-            pass
+        """Initialize pygame for each test.
+        
+        This is required for --forked mode where each test runs in a separate
+        process that doesn't inherit the parent's pygame initialization state.
+        """
+        os.environ['SDL_VIDEODRIVER'] = 'dummy'
+        os.environ['SDL_AUDIODRIVER'] = 'dummy'
+        
+        if not pygame.get_init():
+            pygame.init()
+        if not pygame.font.get_init():
+            pygame.font.init()
+        
+        pygame.event.clear()
 
     def tearDown(self):
+        """Clean up pygame after each test."""
         try:
-            pygame.quit()
-        except Exception:
+            pygame.event.clear()
+        except pygame.error:
             pass
+        pygame.quit()
 
-    def test_game_initializes_in_menu_state(self):
-        """Test that Game starts in MENU state when show_menu=True."""
+    def test_game_initializes_in_menu_state_when_show_menu_true(self):
+        """Game starts in MENU state when show_menu=True."""
         game = Game(show_menu=True)
 
         self.assertEqual(game.state, GameState.MENU)
@@ -47,8 +69,8 @@ class TestMenuToGameTransition(unittest.TestCase):
 
         game.cleanup()
 
-    def test_game_initializes_in_playing_state_when_menu_skipped(self):
-        """Test that Game starts in PLAYING state when show_menu=False."""
+    def test_game_initializes_in_playing_state_when_show_menu_false(self):
+        """Game starts in PLAYING state when show_menu=False."""
         game = Game(show_menu=False)
 
         self.assertEqual(game.state, GameState.PLAYING)
@@ -56,77 +78,63 @@ class TestMenuToGameTransition(unittest.TestCase):
 
         game.cleanup()
 
-    def test_user_can_enter_game_by_pressing_enter(self):
-        """Test that pressing Enter on Play button transitions to game."""
+    def test_pressing_enter_on_play_button_starts_game(self):
+        """Pressing Enter while Play button is selected starts the game."""
         game = Game(show_menu=True)
         self.assertEqual(game.state, GameState.MENU)
 
-        # Create menu (same as game.run_menu() would do)
         menu = MainMenu()
-
-        # Verify menu starts with Play selected and running
         self.assertTrue(menu.running)
-        self.assertEqual(menu.selected_button, 0)  # PLAY = 0
+        self.assertEqual(menu.selected_button, 0)  # PLAY button
 
-        # Simulate user pressing Enter
         enter_event = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_RETURN})
         pygame.event.post(enter_event)
-
-        # Process the event
         menu._process_events()
 
-        # Menu should stop running, meaning game should start
         self.assertFalse(menu.running)
 
-        # Update game state to reflect menu exit
         game.state = GameState.PLAYING
-
         self.assertEqual(game.state, GameState.PLAYING)
 
         game.cleanup()
 
-    def test_user_can_enter_game_by_clicking_play_button(self):
-        """Test that clicking Play button transitions to game."""
+    def test_clicking_play_button_starts_game(self):
+        """Clicking on Play button with mouse starts the game."""
         game = Game(show_menu=True)
 
         menu = MainMenu()
         self.assertTrue(menu.running)
 
-        # Get play button center coordinates
-        play_center = menu.play_button.center
-
-        # Simulate mouse click on Play button
+        play_button_center = menu.play_button.center
         click_event = pygame.event.Event(
             pygame.MOUSEBUTTONDOWN,
-            {'pos': play_center, 'button': 1}
+            {'pos': play_button_center, 'button': 1}
         )
         pygame.event.post(click_event)
-
         menu._process_events()
 
         self.assertFalse(menu.running)
 
         game.cleanup()
 
-    def test_user_can_navigate_menu_then_start_game(self):
-        """Test keyboard navigation (down, up) then Enter to start."""
+    def test_keyboard_navigation_then_enter_starts_game(self):
+        """Navigate menu with arrow keys, then press Enter to start."""
         game = Game(show_menu=True)
-
         menu = MainMenu()
 
-        # Navigate down to Quit
+        # Navigate down to Quit button
         down_event = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_DOWN})
         pygame.event.post(down_event)
         menu._process_events()
-        self.assertEqual(menu.selected_button, 1)  # QUIT = 1
+        self.assertEqual(menu.selected_button, 1)  # QUIT button
 
-        # Navigate back up to Play
+        # Navigate back up to Play button
         up_event = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_UP})
         pygame.event.post(up_event)
         menu._process_events()
-        self.assertEqual(menu.selected_button, 0)  # PLAY = 0
+        self.assertEqual(menu.selected_button, 0)  # PLAY button
 
-        # Press Enter
+        # Press Enter to start game
         enter_event = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_RETURN})
         pygame.event.post(enter_event)
         menu._process_events()
@@ -135,59 +143,49 @@ class TestMenuToGameTransition(unittest.TestCase):
 
         game.cleanup()
 
-    def test_game_loop_runs_after_menu_exit(self):
-        """Test that game loop can process frames after menu exits."""
-        game = Game(show_menu=False)  # Skip menu, start in playing state
+    def test_game_loop_processes_frames_after_menu_exit(self):
+        """Game loop can process multiple frames after starting."""
+        game = Game(show_menu=False)
 
         self.assertEqual(game.state, GameState.PLAYING)
         self.assertTrue(game.running)
 
-        # Run a few frames of the game loop manually
+        # Process several game frames
         for _ in range(5):
             game.handle_events()
             game.update()
             game.render()
 
-        # Game should still be running
         self.assertTrue(game.running)
         self.assertEqual(game.state, GameState.PLAYING)
-
-        # Player should exist and have valid state
         self.assertIsNotNone(game.player)
         self.assertEqual(game.player_life, 200)
 
         game.cleanup()
 
-    def test_full_menu_to_game_transition(self):
-        """Integration test: complete flow from menu initialization to game."""
+    def test_complete_menu_to_game_transition_flow(self):
+        """Complete integration test: menu → input → game state → game loop."""
         game = Game(show_menu=True)
-
-        # Start in menu state
         self.assertEqual(game.state, GameState.MENU)
 
-        # Simulate what run_menu does but with injected input
         menu = MainMenu()
 
-        # Post Enter key event
+        # Simulate user pressing Enter to start
         enter_event = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_RETURN})
         pygame.event.post(enter_event)
-
-        # Run one iteration of menu event processing
         menu._process_events()
-
-        # Menu should have exited
         self.assertFalse(menu.running)
 
-        # Transition game state (as run_menu would do)
+        # Transition to playing state (as game.run_menu() would do)
         game.state = GameState.PLAYING
 
-        # Verify game is ready to play
+        # Verify game is properly initialized for gameplay
         self.assertEqual(game.state, GameState.PLAYING)
         self.assertTrue(game.running)
         self.assertIsNotNone(game.screen)
         self.assertIsNotNone(game.player)
 
-        # Run one game frame to verify game loop works
+        # Verify game loop can process a frame
         game.handle_events()
         game.update()
         game.render()
